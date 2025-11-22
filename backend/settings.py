@@ -148,7 +148,7 @@ CORS_ALLOWED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS = [
      "http://127.0.0.1:8000/",
      "http://localhost:5173/",
-     "http://web-production-9a3af.up.railway.app/",
+     "https://web-production-9a3af.up.railway.app",
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 # Jazzmin Configuration
