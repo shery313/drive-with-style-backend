@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-d(ndj_59)2pcgxkit!!rdf*=6m*v0=xyg%&!z_amxq1d!e_(&(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['web-production-9a3af.up.railway.app']
+ALLOWED_HOSTS = ['web-production-9a3af.up.railway.app','drivewithstyle.up.railway.app']
 
 
 # Application definition
@@ -140,6 +140,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
+    "http://drivewithstyle.up.railway.app",
     "http://web-production-9a3af.up.railway.app",
     # "http://localhost:5173",
 ]
@@ -147,6 +148,7 @@ CORS_ALLOWED_ORIGINS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://web-production-9a3af.up.railway.app",
+    "https://drivewithstyle.up.railway.app",
      "http://127.0.0.1:8000/",
      "http://localhost:5173/",
      "https://web-production-9a3af.up.railway.app",
