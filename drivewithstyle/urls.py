@@ -5,7 +5,7 @@ from .views import ContactListCreateView,ContactRetrieveUpdateDestroyView,Vehicl
 
 urlpatterns = [
    path('fleet/',VehicleListCreateView.as_view(), name='vehicle-list-create'),
-   path('fleet/<int:pk>/',VehicleRetrieveUpdateDestroyView.as_view(), name='vehicle-retrieve-update-destroy'),
+   path('fleet/<str:slug>/',VehicleRetrieveUpdateDestroyView.as_view(), name='vehicle-retrieve-update-destroy'),
    path('booking/',BookingListCreateView.as_view(), name='booking-list-create'),
    path('booking/<int:pk>/',BookingRetrieveUpdateDestroyView.as_view(), name='booking-retrieve-update-destroy'),
    path('contact/',ContactListCreateView.as_view(), name='contact-list-create'),

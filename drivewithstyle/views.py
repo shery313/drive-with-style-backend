@@ -17,6 +17,7 @@ class VehicleListCreateView(ListCreateAPIView):
 class VehicleRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Vehicle.objects.all()
     serializer_class = FleetSerializer
+    lookup_field="slug"
 logger = logging.getLogger(__name__)
 class BookingListCreateView(ListCreateAPIView):
     queryset = Booking.objects.all()
