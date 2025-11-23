@@ -9,6 +9,17 @@ from .serailizers import ContactSerializer,FleetSerializer,BookSerializer
 from rest_framework.generics import ListCreateAPIView,RetrieveUpdateDestroyAPIView
 from .models import Vehicle,Booking,ContactMessage
 
+def welcome_page(request):
+    # Get the current domain
+    current_domain = request.get_host()
+    
+    context = {
+        'domain': current_domain,
+        'admin_url': '/api/v1/admin/',
+        'api_url': '/api/',
+    }
+    
+    return render(request, 'welcome.html', context)
 # Create your views here.
 class VehicleListCreateView(ListCreateAPIView):
     queryset = Vehicle.objects.all()

@@ -45,7 +45,7 @@ urlpatterns = [
     path('api/v1/admin/', admin.site.urls),
     # Add something new here
 
-    path("api/v1/", include("drivewithstyle.urls"))
+    path("", include("drivewithstyle.urls"))
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
