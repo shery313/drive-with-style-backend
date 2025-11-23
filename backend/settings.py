@@ -143,7 +143,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # Directory where static files will be collected
-# STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Additional locations of static files
 STATICFILES_DIRS = [
@@ -165,7 +165,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'drivewithstyle.CustomUser'
 # STATIC_URL = 'static/'
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, "media")]
-STATIC_ROOT = BASE_DIR / 'templates'
+# STATIC_ROOT = BASE_DIR / 'templates'
 
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
