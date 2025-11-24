@@ -1,0 +1,17 @@
+﻿/* adminlte.css - Main AdminLTE styles */
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f9;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.header {
+    background: #007bff;
+    color: white;
+    padding: 1rem;
+}
