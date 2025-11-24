@@ -103,24 +103,12 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# ===== STATIC FILES (WhiteNoise) =====
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-    # BASE_DIR / 'drivewithstyle' / 'static',  # Only uncomment if this directory exists
-]
 
 # WhiteNoise for static files (simple version - no compression to avoid .map file issues)
 STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
-# ===== MEDIA FILES (Cloudinary) =====
-MEDIA_URL = '/media/'
-# MEDIA_ROOT = BASE_DIR / 'media'
-# MEDIA_ROOT =None
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-# CLOUDINARY_URL=os.getenv("CLOUDINARY_URL")
-MEDIA_URL = '/media/'
+
+
 # ===== STATIC FILES (WhiteNoise) =====
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
