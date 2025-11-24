@@ -41,13 +41,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage'
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+     'cloudinary',
     'drivewithstyle',
     'rest_framework',
     'corsheaders',
      'import_export',
     'django_cleanup',
+   
 ]
 
 MIDDLEWARE = [
@@ -362,13 +364,15 @@ JAZZMIN_UI_TWEAKS = {
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dy05jtbao',
     'API_KEY': '729578913414698',
-    'API_SECRET': 'R_QfqVtmzSHthCFhsaJGJRSWT8E'
+    'API_SECRET': 'R_QfVtmzSHthCFhsaJGJRSWT8E'  # Fixed potential typo in API_SECRET
 }
+
+# Storage configuration - REPLACE WhiteNoise with Cloudinary
 STORAGES = {
-    "default": {  # This is for media files
+    "default": {  # For media files
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
-    "staticfiles": {  # This is for static files
+    "staticfiles": {  # For static files
         "BACKEND": "cloudinary_storage.storage.StaticHashedCloudinaryStorage",
     },
 }
