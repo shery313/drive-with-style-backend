@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage'
     'django.contrib.staticfiles',
     'drivewithstyle',
     'rest_framework',
@@ -356,4 +357,18 @@ JAZZMIN_UI_TWEAKS = {
         "danger": "btn-danger",
         "success": "btn-success"
     }
+}
+# In settings.py (less secure for production)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dy05jtbao',
+    'API_KEY': '729578913414698',
+    'API_SECRET': 'R_QfqVtmzSHthCFhsaJGJRSWT8E'
+}
+STORAGES = {
+    "default": {  # This is for media files
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {  # This is for static files
+        "BACKEND": "cloudinary_storage.storage.StaticHashedCloudinaryStorage",
+    },
 }
