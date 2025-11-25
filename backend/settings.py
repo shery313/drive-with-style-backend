@@ -161,13 +161,13 @@ JAZZMIN_SETTINGS = {
     "site_brand": "Drive With Style",
     
     # Logo to use for your site, must be present in static files, used for brand on top left
-    "site_logo": "images/favicon.ico",  # Changed path - make sure this file exists in static/images/
+    "site_logo": "vehicles/favicon.ico",  # Changed path - make sure this file exists in static/images/
     
     # CSS classes that are applied to the logo above
     "site_logo_classes": "img-circle",
     
     # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
-    "site_icon": "images/favicon.ico",  # Changed path
+    "site_icon": "vehicles/logo1.jpg" , # Changed path
     
     # Welcome text on the login screen
     "welcome_sign": "Welcome to Drive With Style Admin Panel",
