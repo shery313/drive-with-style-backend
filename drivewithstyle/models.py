@@ -74,6 +74,7 @@ class Vehicle(models.Model):
     vehicle_type = models.CharField(max_length=20, choices=VEHICLE_TYPES)
     description = models.TextField()
     price_per_day = models.DecimalField(max_digits=10, decimal_places=2)
+    price_per_month = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
     image = models.ImageField(upload_to='vehicles/')
     seats = models.PositiveIntegerField()
     fuel_type = models.CharField(max_length=20, choices=FUEL_TYPES)

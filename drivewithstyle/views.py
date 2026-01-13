@@ -35,7 +35,6 @@ class BookingListCreateView(ListCreateAPIView):
     serializer_class = BookSerializer
 
     def create(self, request, *args, **kwargs):
-        print(request.data)
         logger.debug(f"RAW incoming data: {request.data}")  # See what's being posted
 
         serializer = self.get_serializer(data=request.data)
