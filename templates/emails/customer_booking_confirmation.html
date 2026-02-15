@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        .header {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .details {
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+        }
+        .highlight {
+            color: #27ae60;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="header">🚗 Booking Confirmation</h2>
+
+    <p>Dear <strong>{{ booking.customer_name }}</strong>,</p>
+
+    <p>Your booking has been successfully confirmed. Below are your booking details:</p>
+
+    <div class="details">
+        <p><strong>Booking Reference:</strong> {{ booking.booking_reference }}</p>
+        <p><strong>Vehicle:</strong> {{ booking.vehicle.name }}</p>
+        <p><strong>Pickup Date:</strong> {{ booking.pickup_date }}</p>
+        <p><strong>Return Date:</strong> {{ booking.return_date }}</p>
+        <p><strong>Total Cost:</strong> <span class="highlight">{{ booking.total_cost }}</span></p>
+    </div>
+
+    <p>We look forward to serving you.</p>
+
+    <div class="footer">
+        Thank you for choosing our service.
+    </div>
+</div>
+</body>
+</html>

@@ -268,3 +268,14 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success"
     }
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'contact.drivewithstyle@gmail.com'
+EMAIL_HOST_PASSWORD = 'nngn uysq ccly mtom'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Owner email
+OWNER_EMAIL = 'DrivewithstyleRAC@gmail.com'

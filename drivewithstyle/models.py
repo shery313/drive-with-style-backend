@@ -9,6 +9,11 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.text import slugify
 import random
 import string
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
 # my custom user model 
 class CustomUserManager(BaseUserManager):
     """
@@ -240,3 +245,44 @@ class Testimonial(models.Model):
 
     def __str__(self):
         return f"Testimonial from {self.customer_name} ({self.rating} stars)"
+    
+@receiver(post_save, sender=Booking)
+def send_booking_emails(sender, instance, created, **kwargs):
+    if created:
+        # ----------------------
+        # EMAIL TO CUSTOMER
+        # ----------------------
+        subject_customer = f"Booking Confirmation - {instance.booking_reference}"
+
+        html_content_customer = render_to_string(
+            "emails/customer_booking_confirmation.html",
+            {"booking": instance}
+        )
+
+        email_customer = EmailMultiAlternatives(
+            subject_customer,
+            "",
+            settings.DEFAULT_FROM_EMAIL,
+            [instance.customer_email],
+        )
+        email_customer.attach_alternative(html_content_customer, "text/html")
+        email_customer.send()
+
+        # ----------------------
+        # EMAIL TO OWNER
+        # ----------------------
+        subject_owner = f"New Booking Received - {instance.booking_reference}"
+
+        html_content_owner = render_to_string(
+            "emails/owner_booking_notification.html",
+            {"booking": instance}
+        )
+
+        email_owner = EmailMultiAlternatives(
+            subject_owner,
+            "",
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.OWNER_EMAIL],
+        )
+        email_owner.attach_alternative(html_content_owner, "text/html")
+        email_owner.send()

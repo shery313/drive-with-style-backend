@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        .header {
+            color: #c0392b;
+        }
+        .details p {
+            margin: 5px 0;
+        }
+        .label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="header">📢 New Booking Alert</h2>
+
+    <div class="details">
+        <p><span class="label">Booking Reference:</span> {{ booking.booking_reference }}</p>
+        <p><span class="label">Customer Name:</span> {{ booking.customer_name }}</p>
+        <p><span class="label">Email:</span> {{ booking.customer_email }}</p>
+        <p><span class="label">Phone:</span> {{ booking.customer_phone }}</p>
+        <p><span class="label">Vehicle:</span> {{ booking.vehicle.name }}</p>
+        <p><span class="label">Pickup Date:</span> {{ booking.pickup_date }}</p>
+        <p><span class="label">Return Date:</span> {{ booking.return_date }}</p>
+        <p><span class="label">Payment Method:</span> {{ booking.payment_method }}</p>
+        <p><span class="label">Status:</span> {{ booking.status }}</p>
+    </div>
+</div>
+</body>
+</html>
