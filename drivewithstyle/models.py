@@ -246,43 +246,47 @@ class Testimonial(models.Model):
     def __str__(self):
         return f"Testimonial from {self.customer_name} ({self.rating} stars)"
     
+import logging
+logger = logging.getLogger(__name__)
+
+
 @receiver(post_save, sender=Booking)
 def send_booking_emails(sender, instance, created, **kwargs):
     if created:
-        # ----------------------
-        # EMAIL TO CUSTOMER
-        # ----------------------
-        subject_customer = f"Booking Confirmation - {instance.booking_reference}"
+        try:
+            # Customer Email
+            subject_customer = f"Booking Confirmation - {instance.booking_reference}"
 
-        html_content_customer = render_to_string(
-            "emails/customer_booking_confirmation.html",
-            {"booking": instance}
-        )
+            html_content_customer = render_to_string(
+                "emails/customer_booking_confirmation.html",
+                {"booking": instance}
+            )
 
-        email_customer = EmailMultiAlternatives(
-            subject_customer,
-            "",
-            settings.DEFAULT_FROM_EMAIL,
-            [instance.customer_email],
-        )
-        email_customer.attach_alternative(html_content_customer, "text/html")
-        email_customer.send()
+            email_customer = EmailMultiAlternatives(
+                subject_customer,
+                "",
+                settings.DEFAULT_FROM_EMAIL,
+                [instance.customer_email],
+            )
+            email_customer.attach_alternative(html_content_customer, "text/html")
+            email_customer.send()
 
-        # ----------------------
-        # EMAIL TO OWNER
-        # ----------------------
-        subject_owner = f"New Booking Received - {instance.booking_reference}"
+            # Owner Email
+            subject_owner = f"New Booking - {instance.booking_reference}"
 
-        html_content_owner = render_to_string(
-            "emails/owner_booking_notification.html",
-            {"booking": instance}
-        )
+            html_content_owner = render_to_string(
+                "emails/owner_booking_notification.html",
+                {"booking": instance}
+            )
 
-        email_owner = EmailMultiAlternatives(
-            subject_owner,
-            "",
-            settings.DEFAULT_FROM_EMAIL,
-            [settings.OWNER_EMAIL],
-        )
-        email_owner.attach_alternative(html_content_owner, "text/html")
-        email_owner.send()
+            email_owner = EmailMultiAlternatives(
+                subject_owner,
+                "",
+                settings.DEFAULT_FROM_EMAIL,
+                [settings.OWNER_EMAIL],
+            )
+            email_owner.attach_alternative(html_content_owner, "text/html")
+            email_owner.send()
+
+        except Exception as e:
+            logger.error(f"Email sending failed: {str(e)}")
