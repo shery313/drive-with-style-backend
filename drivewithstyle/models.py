@@ -1,19 +1,12 @@
 # Create your models here.
-from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils import timezone
-from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.utils.text import slugify
-import random
 import string
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.conf import settings
+
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.utils.text import slugify
 # my custom user model 
 class CustomUserManager(BaseUserManager):
     """
@@ -105,10 +98,17 @@ class Vehicle(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.vehicle_type})"
+
     def save(self, *args, **kwargs):
-        if not self.slug:
-            # Generate a slug from the name
-            self.slug = slugify(self.name)
+        base_slug = slugify(self.name) or "vehicle"
+        candidate = self.slug or base_slug
+        suffix = 2
+
+        while Vehicle.objects.exclude(pk=self.pk).filter(slug=candidate).exists():
+            candidate = f"{base_slug}-{suffix}"
+            suffix += 1
+
+        self.slug = candidate
         super().save(*args, **kwargs)
 
 
@@ -181,15 +181,24 @@ class Booking(models.Model):
     def __str__(self):
         return f"Booking  {self.vehicle.name}"
 
+    @classmethod
+    def generate_booking_reference(cls):
+        allowed_chars = string.ascii_uppercase + string.digits
+        date_prefix = timezone.localdate().strftime("%Y%m%d")
+
+        while True:
+            candidate = f"DWS{date_prefix}{get_random_string(4, allowed_chars)}"
+            if not cls.objects.filter(booking_reference=candidate).exists():
+                return candidate
+
     def save(self, *args, **kwargs):
         if not self.booking_reference:
-            # Generate booking reference on first save
-            self.booking_reference = f"PK{timezone.now().strftime('%Y%m%d')}{self.id or 0:04d}".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            self.booking_reference = self.generate_booking_reference()
         super().save(*args, **kwargs)
 
     @property
     def total_days(self):
-        return (self.return_date - self.pickup_date).days
+        return max((self.return_date - self.pickup_date).days, 0)
 
     @property
     def total_cost(self):
@@ -245,48 +254,3 @@ class Testimonial(models.Model):
 
     def __str__(self):
         return f"Testimonial from {self.customer_name} ({self.rating} stars)"
-    
-import logging
-logger = logging.getLogger(__name__)
-
-
-# @receiver(post_save, sender=Booking)
-# def send_booking_emails(sender, instance, created, **kwargs):
-#     if created:
-#         try:
-#             # Customer Email
-#             subject_customer = f"Booking Confirmation - {instance.booking_reference}"
-
-#             html_content_customer = render_to_string(
-#                 "emails/customer_booking_confirmation.html",
-#                 {"booking": instance}
-#             )
-
-#             email_customer = EmailMultiAlternatives(
-#                 subject_customer,
-#                 "",
-#                 settings.DEFAULT_FROM_EMAIL,
-#                 [instance.customer_email],
-#             )
-#             email_customer.attach_alternative(html_content_customer, "text/html")
-#             email_customer.send()
-
-#             # Owner Email
-#             subject_owner = f"New Booking - {instance.booking_reference}"
-
-#             html_content_owner = render_to_string(
-#                 "emails/owner_booking_notification.html",
-#                 {"booking": instance}
-#             )
-
-#             email_owner = EmailMultiAlternatives(
-#                 subject_owner,
-#                 "",
-#                 settings.DEFAULT_FROM_EMAIL,
-#                 [settings.OWNER_EMAIL],
-#             )
-#             email_owner.attach_alternative(html_content_owner, "text/html")
-#             email_owner.send()
-
-#         except Exception as e:
-#             logger.error(f"Email sending failed: {str(e)}")

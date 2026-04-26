@@ -33,11 +33,11 @@
 </head>
 <body>
 <div class="container">
-    <h2 class="header">🚗 Booking Confirmation</h2>
+    <h2 class="header">Booking Request Received</h2>
 
     <p>Dear <strong>{{ booking.customer_name }}</strong>,</p>
 
-    <p>Your booking has been successfully confirmed. Below are your booking details:</p>
+    <p>Your booking request has been received and is awaiting confirmation. Below are your booking details:</p>
 
     <div class="details">
         <p><strong>Booking Reference:</strong> {{ booking.booking_reference }}</p>
@@ -47,7 +47,7 @@
         <p><strong>Total Cost:</strong> <span class="highlight">{{ booking.total_cost }}</span></p>
     </div>
 
-    <p>We look forward to serving you.</p>
+    <p>Our team will review the request and follow up with you shortly.</p>
 
     <div class="footer">
         Thank you for choosing our service.

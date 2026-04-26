@@ -1,114 +1,171 @@
-from django.shortcuts import render
-from rest_framework.exceptions import ValidationError
 import logging
-from rest_framework.response import Response
-from rest_framework import status
-
-
-from .serailizers import ContactSerializer,FleetSerializer,BookSerializer
-from rest_framework.generics import ListCreateAPIView,RetrieveUpdateDestroyAPIView
-from .models import Vehicle,Booking,ContactMessage
 import threading
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
+
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
+from django.shortcuts import render
+from django.template.loader import render_to_string
+from rest_framework import status
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.response import Response
+
+from .models import Booking, ContactMessage, Vehicle
+from .serailizers import (
+    AdminBookingSerializer,
+    AdminContactSerializer,
+    AdminVehicleSerializer,
+    PublicBookingSerializer,
+    PublicContactSerializer,
+    PublicVehicleSerializer,
+)
+
+logger = logging.getLogger(__name__)
+
+
 def welcome_page(request):
-    # Get the current domain
     current_domain = request.get_host()
-    
+
     context = {
-        'domain': current_domain,
-        'admin_url': '/api/v1/admin/',
-        'api_url': '/api/',
+        "domain": current_domain,
+        "admin_url": "/api/v1/admin/",
+        "api_url": "/api/",
     }
-    
-    return render(request, 'welcome.html', context)
-# Create your views here.
+
+    return render(request, "welcome.html", context)
+
+
+def send_booking_emails(booking_id):
+    if not settings.DEFAULT_FROM_EMAIL:
+        logger.warning("Booking email skipped because DEFAULT_FROM_EMAIL is not configured.")
+        return
+
+    try:
+        booking = Booking.objects.select_related("vehicle").get(pk=booking_id)
+
+        subject_customer = f"Booking Request Received - {booking.booking_reference}"
+        html_customer = render_to_string(
+            "emails/customer_booking_confirmation.html",
+            {"booking": booking},
+        )
+        email_customer = EmailMultiAlternatives(
+            subject_customer,
+            "",
+            settings.DEFAULT_FROM_EMAIL,
+            [booking.customer_email],
+        )
+        email_customer.attach_alternative(html_customer, "text/html")
+        email_customer.send()
+
+        subject_owner = f"New Booking - {booking.booking_reference}"
+        html_owner = render_to_string(
+            "emails/owner_booking_notification.html",
+            {"booking": booking},
+        )
+        email_owner = EmailMultiAlternatives(
+            subject_owner,
+            "",
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.OWNER_EMAIL],
+        )
+        email_owner.attach_alternative(html_owner, "text/html")
+        email_owner.send()
+
+        logger.info("Booking emails sent successfully for %s", booking.booking_reference)
+    except Exception:
+        logger.exception("Email sending failed for booking %s", booking_id)
+
+
+def queue_booking_emails(booking_id):
+    email_thread = threading.Thread(
+        target=send_booking_emails,
+        args=(booking_id,),
+        daemon=True,
+    )
+    email_thread.start()
+
+
 class VehicleListCreateView(ListCreateAPIView):
     queryset = Vehicle.objects.all()
-    serializer_class = FleetSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAdminUser()]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET" and not self.request.user.is_staff:
+            return PublicVehicleSerializer
+        return AdminVehicleSerializer
+
 
 class VehicleRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Vehicle.objects.all()
-    serializer_class = FleetSerializer
-    lookup_field="slug"
-logger = logging.getLogger(__name__)
+    lookup_field = "slug"
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAdminUser()]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET" and not self.request.user.is_staff:
+            return PublicVehicleSerializer
+        return AdminVehicleSerializer
+
+
 class BookingListCreateView(ListCreateAPIView):
-    queryset = Booking.objects.all()
-    serializer_class = BookSerializer
+    queryset = Booking.objects.select_related("vehicle").all()
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [AllowAny()]
+        return [IsAdminUser()]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST" and not self.request.user.is_staff:
+            return PublicBookingSerializer
+        return AdminBookingSerializer
 
     def create(self, request, *args, **kwargs):
-        logger.debug(f"RAW incoming data: {request.data}")
-
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            logger.error(f"Serializer errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        vehicle_id = request.data.get('vehicle')
-        try:
-            vehicle_instance = Vehicle.objects.get(id=vehicle_id)
-        except Vehicle.DoesNotExist:
-            logger.error(f"Invalid vehicle ID {vehicle_id}")
-            return Response({'vehicle': 'Invalid vehicle ID'}, status=400)
+        serializer.is_valid(raise_exception=True)
+        booking = serializer.save()
 
-        # Save the booking
-        booking_instance = serializer.save(vehicle=vehicle_instance)
-        logger.info("Booking created successfully")
+        transaction.on_commit(lambda: queue_booking_emails(booking.pk))
 
-        # -----------------------------
-        # Send emails asynchronously
-        # -----------------------------
-        def send_email_async():
-            try:
-                # Customer Email
-                subject_customer = f"Booking Confirmation - {booking_instance.booking_reference}"
-                html_customer = render_to_string(
-                    "emails/customer_booking_confirmation.html",
-                    {"booking": booking_instance}
-                )
-                email_customer = EmailMultiAlternatives(
-                    subject_customer,
-                    "",
-                    settings.DEFAULT_FROM_EMAIL,
-                    [booking_instance.customer_email],
-                )
-                email_customer.attach_alternative(html_customer, "text/html")
-                email_customer.send()
+        response_serializer = PublicBookingSerializer(
+            booking,
+            context=self.get_serializer_context(),
+        )
+        headers = self.get_success_headers(response_serializer.data)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-                # Owner Email
-                subject_owner = f"New Booking - {booking_instance.booking_reference}"
-                html_owner = render_to_string(
-                    "emails/owner_booking_notification.html",
-                    {"booking": booking_instance}
-                )
-                email_owner = EmailMultiAlternatives(
-                    subject_owner,
-                    "",
-                    settings.DEFAULT_FROM_EMAIL,
-                    [settings.OWNER_EMAIL],
-                )
-                email_owner.attach_alternative(html_owner, "text/html")
-                email_owner.send()
-
-                logger.info("Booking emails sent successfully")
-            except Exception as e:
-                logger.error(f"Email sending failed: {str(e)}")
-
-        # Start the thread so API responds immediately
-        threading.Thread(target=send_email_async).start()
-
-        # Return response immediately
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class BookingRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Booking.objects.all()
-    serializer_class = BookSerializer
+    queryset = Booking.objects.select_related("vehicle").all()
+    serializer_class = AdminBookingSerializer
+    permission_classes = [IsAdminUser]
+
 
 class ContactListCreateView(ListCreateAPIView):
     queryset = ContactMessage.objects.all()
-    serializer_class = ContactSerializer
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [AllowAny()]
+        return [IsAdminUser()]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST" and not self.request.user.is_staff:
+            return PublicContactSerializer
+        return AdminContactSerializer
+
 
 class ContactRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = ContactMessage.objects.all()
-    serializer_class = ContactSerializer
+    serializer_class = AdminContactSerializer
+    permission_classes = [IsAdminUser]

@@ -1,6 +1,14 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import welcome_page,ContactListCreateView,ContactRetrieveUpdateDestroyView,VehicleListCreateView,VehicleRetrieveUpdateDestroyView,BookingListCreateView,BookingRetrieveUpdateDestroyView
+from django.urls import path
+
+from .views import (
+    BookingListCreateView,
+    BookingRetrieveUpdateDestroyView,
+    ContactListCreateView,
+    ContactRetrieveUpdateDestroyView,
+    VehicleListCreateView,
+    VehicleRetrieveUpdateDestroyView,
+    welcome_page,
+)
 
 
 urlpatterns = [
