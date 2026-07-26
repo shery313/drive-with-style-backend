@@ -3,22 +3,24 @@ import threading
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from django.db import transaction
+from django.db import models, transaction
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.utils import timezone
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
-from .models import Booking, ContactMessage, Vehicle
+from .models import Booking, ContactMessage, Promotion, Vehicle
 from .serailizers import (
     AdminBookingSerializer,
     AdminContactSerializer,
     AdminVehicleSerializer,
     PublicBookingSerializer,
     PublicContactSerializer,
+    PublicPromotionSerializer,
     PublicVehicleSerializer,
 )
 
@@ -88,7 +90,7 @@ def queue_booking_emails(booking_id):
 
 
 class VehicleListCreateView(ListCreateAPIView):
-    queryset = Vehicle.objects.all()
+    queryset = Vehicle.objects.prefetch_related("gallery_images").all()
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -102,7 +104,7 @@ class VehicleListCreateView(ListCreateAPIView):
 
 
 class VehicleRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Vehicle.objects.all()
+    queryset = Vehicle.objects.prefetch_related("gallery_images").all()
     lookup_field = "slug"
 
     def get_permissions(self):
@@ -169,3 +171,18 @@ class ContactRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = ContactMessage.objects.all()
     serializer_class = AdminContactSerializer
     permission_classes = [IsAdminUser]
+
+
+class PublicPromotionListView(ListAPIView):
+    serializer_class = PublicPromotionSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        now = timezone.now()
+        return (
+            Promotion.objects.select_related("applies_to")
+            .filter(is_active=True)
+            .filter(models.Q(starts_at__isnull=True) | models.Q(starts_at__lte=now))
+            .filter(models.Q(ends_at__isnull=True) | models.Q(ends_at__gte=now))
+            .order_by("priority", "-is_featured", "-created_at")
+        )

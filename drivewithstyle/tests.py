@@ -1,8 +1,9 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
-from .models import Booking, ContactMessage, Vehicle
+from .models import Booking, ContactMessage, Promotion, Vehicle, VehicleImage
 
 
 TEST_IMAGE = (
@@ -59,6 +60,32 @@ class PublicApiTests(TestCase):
 
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(create_response.status_code, 403)
+
+    def test_public_vehicle_detail_includes_active_gallery_images(self):
+        for index in range(3):
+            VehicleImage.objects.create(
+                vehicle=self.vehicle,
+                image=SimpleUploadedFile(
+                    f"gallery-{index}.gif",
+                    TEST_IMAGE,
+                    content_type="image/gif",
+                ),
+                alt_text=f"Toyota Yaris gallery {index + 1}",
+                sort_order=index,
+            )
+        VehicleImage.objects.create(
+            vehicle=self.vehicle,
+            image=SimpleUploadedFile("inactive-gallery.gif", TEST_IMAGE, content_type="image/gif"),
+            alt_text="Inactive image",
+            sort_order=4,
+            is_active=False,
+        )
+
+        response = self.client.get(f"/api/v1/fleet/{self.vehicle.slug}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["gallery_images"]), 3)
+        self.assertEqual(response.data["gallery_images"][0]["alt_text"], "Toyota Yaris gallery 1")
 
     def test_public_booking_create_ignores_admin_only_fields(self):
         response = self.client.post(
@@ -135,6 +162,35 @@ class PublicApiTests(TestCase):
         self.assertEqual(post_response.status_code, 201)
         self.assertEqual(list_response.status_code, 403)
         self.assertEqual(ContactMessage.objects.count(), 1)
+
+    def test_public_promotions_only_returns_live_items(self):
+        live = Promotion.objects.create(
+            title="Airport Transfer Week",
+            promotion_type="discount",
+            summary="Save on premium airport pickups this week.",
+            discount_percent=15,
+            promo_code="AIRPORT15",
+            priority=1,
+        )
+        Promotion.objects.create(
+            title="Expired Wedding Offer",
+            promotion_type="special_event",
+            summary="This should no longer appear.",
+            ends_at=timezone.now() - timezone.timedelta(days=1),
+        )
+        Promotion.objects.create(
+            title="Draft Global Campaign",
+            promotion_type="global_campaign",
+            summary="This should stay hidden until published.",
+            is_active=False,
+        )
+
+        response = self.client.get("/api/v1/promotions/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], live.slug)
+        self.assertEqual(response.data[0]["promo_code"], "AIRPORT15")
 
 
 @override_settings(

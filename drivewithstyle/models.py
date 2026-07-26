@@ -112,6 +112,28 @@ class Vehicle(models.Model):
         super().save(*args, **kwargs)
 
 
+class VehicleImage(models.Model):
+    vehicle = models.ForeignKey(
+        Vehicle,
+        on_delete=models.CASCADE,
+        related_name="gallery_images",
+    )
+    image = models.ImageField(upload_to="vehicle_gallery/")
+    alt_text = models.CharField(max_length=140, blank=True)
+    caption = models.CharField(max_length=180, blank=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+        verbose_name = "Fleet Gallery Image"
+        verbose_name_plural = "Fleet Gallery Images"
+
+    def __str__(self):
+        return f"{self.vehicle.name} gallery image"
+
+
 class Booking(models.Model):
     PAYMENT_METHODS = (
         ('bank-transfer', 'Bank Transfer'),
@@ -230,6 +252,118 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.name} - {self.get_subject_display()}"
+
+
+class Promotion(models.Model):
+    PROMOTION_TYPES = (
+        ("announcement", "Announcement"),
+        ("discount", "Discount"),
+        ("special_event", "Special Event"),
+        ("global_campaign", "Global Campaign"),
+    )
+
+    title = models.CharField(max_length=140)
+    slug = models.SlugField(unique=True, blank=True)
+    promotion_type = models.CharField(
+        max_length=24,
+        choices=PROMOTION_TYPES,
+        default="announcement",
+    )
+    eyebrow = models.CharField(
+        max_length=80,
+        blank=True,
+        help_text="Small label shown above the promotion, for example Eid Offer or Airport Week.",
+    )
+    summary = models.CharField(max_length=220)
+    description = models.TextField(blank=True)
+    poster = models.ImageField(
+        upload_to="promotions/",
+        blank=True,
+        null=True,
+        help_text="Optional campaign poster or event artwork shown on the website.",
+    )
+    discount_percent = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        help_text="Optional percentage discount.",
+    )
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Optional fixed discount amount in PKR.",
+    )
+    promo_code = models.CharField(max_length=40, blank=True)
+    applies_to = models.ForeignKey(
+        Vehicle,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="promotions",
+        help_text="Leave empty if this applies to the whole fleet.",
+    )
+    audience_region = models.CharField(
+        max_length=80,
+        default="Worldwide",
+        help_text="Examples: Worldwide, Islamabad, GCC travelers, UK customers.",
+    )
+    cta_label = models.CharField(max_length=40, default="Book now")
+    cta_url = models.CharField(
+        max_length=255,
+        default="/book",
+        help_text="Use a site path such as /book or a full external URL.",
+    )
+    terms = models.CharField(max_length=240, blank=True)
+    starts_at = models.DateTimeField(blank=True, null=True)
+    ends_at = models.DateTimeField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(
+        default=False,
+        help_text="Featured promotions are given stronger visual priority on the homepage.",
+    )
+    show_in_announcement_bar = models.BooleanField(
+        default=True,
+        help_text="Show this promotion in compact announcement placements.",
+    )
+    priority = models.PositiveSmallIntegerField(
+        default=10,
+        help_text="Lower numbers appear first.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["priority", "-is_featured", "-created_at"]
+        verbose_name = "Promotion / Announcement"
+        verbose_name_plural = "Promotions & Announcements"
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_live(self):
+        now = timezone.now()
+        if not self.is_active:
+            return False
+        if self.starts_at and self.starts_at > now:
+            return False
+        if self.ends_at and self.ends_at < now:
+            return False
+        return True
+
+    def save(self, *args, **kwargs):
+        base_slug = slugify(self.title) or "promotion"
+        candidate = self.slug or base_slug
+        suffix = 2
+
+        while Promotion.objects.exclude(pk=self.pk).filter(slug=candidate).exists():
+            candidate = f"{base_slug}-{suffix}"
+            suffix += 1
+
+        self.slug = candidate
+        super().save(*args, **kwargs)
 
 class Testimonial(models.Model):
     RATING_CHOICES = (

@@ -278,7 +278,14 @@ JAZZMIN_SETTINGS = {
     "navigation_expanded": True,
     "hide_apps": [],
     "hide_models": [],
-    "order_with_respect_to": ["auth", "drivewithstyle", "drivewithstyle.Vehicle", "drivewithstyle.Booking", "drivewithstyle.ContactMessage"],
+    "order_with_respect_to": [
+        "auth",
+        "drivewithstyle",
+        "drivewithstyle.Promotion",
+        "drivewithstyle.Vehicle",
+        "drivewithstyle.Booking",
+        "drivewithstyle.ContactMessage",
+    ],
     
     # Custom links
     "custom_links": {},
@@ -290,6 +297,7 @@ JAZZMIN_SETTINGS = {
         "auth.Group": "fas fa-users",
         "drivewithstyle.Vehicle": "fas fa-car",
         "drivewithstyle.Booking": "fas fa-calendar-check",
+        "drivewithstyle.Promotion": "fas fa-bullhorn",
         "drivewithstyle.ContactMessage": "fas fa-envelope",
         "drivewithstyle.Testimonial": "fas fa-star",
         "drivewithstyle.CustomUser": "fas fa-user-tie",

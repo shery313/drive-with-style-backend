@@ -5,6 +5,7 @@ from .views import (
     BookingRetrieveUpdateDestroyView,
     ContactListCreateView,
     ContactRetrieveUpdateDestroyView,
+    PublicPromotionListView,
     VehicleListCreateView,
     VehicleRetrieveUpdateDestroyView,
     welcome_page,
@@ -19,5 +20,6 @@ urlpatterns = [
    path('api/v1/booking/<int:pk>/',BookingRetrieveUpdateDestroyView.as_view(), name='booking-retrieve-update-destroy'),
    path('api/v1/contact/',ContactListCreateView.as_view(), name='contact-list-create'),
    path('api/v1/contact/<int:pk>/',ContactRetrieveUpdateDestroyView.as_view(), name='contact-retrieve-update-destroy'),
+   path('api/v1/promotions/', PublicPromotionListView.as_view(), name='promotion-list'),
    
 ]

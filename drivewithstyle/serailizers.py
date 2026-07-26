@@ -1,10 +1,19 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Booking, ContactMessage, Vehicle
+from .models import Booking, ContactMessage, Promotion, Vehicle, VehicleImage
+
+
+class PublicVehicleImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleImage
+        fields = ("id", "image", "alt_text", "caption", "sort_order")
+        read_only_fields = fields
 
 
 class PublicVehicleSerializer(serializers.ModelSerializer):
+    gallery_images = serializers.SerializerMethodField()
+
     class Meta:
         model = Vehicle
         fields = (
@@ -25,10 +34,19 @@ class PublicVehicleSerializer(serializers.ModelSerializer):
             "luggage_capacity",
             "mileage",
             "insurance_coverage",
+            "gallery_images",
             "created_at",
             "updated_at",
         )
         read_only_fields = fields
+
+    def get_gallery_images(self, obj):
+        images = obj.gallery_images.filter(is_active=True)
+        return PublicVehicleImageSerializer(
+            images,
+            many=True,
+            context=self.context,
+        ).data
 
 
 class AdminVehicleSerializer(serializers.ModelSerializer):
@@ -157,3 +175,38 @@ class AdminContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = "__all__"
+
+
+class PublicPromotionSerializer(serializers.ModelSerializer):
+    applies_to_name = serializers.CharField(source="applies_to.name", read_only=True)
+    applies_to_slug = serializers.CharField(source="applies_to.slug", read_only=True)
+    is_live = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Promotion
+        fields = (
+            "id",
+            "slug",
+            "title",
+            "promotion_type",
+            "eyebrow",
+            "summary",
+            "description",
+            "poster",
+            "discount_percent",
+            "discount_amount",
+            "promo_code",
+            "applies_to_name",
+            "applies_to_slug",
+            "audience_region",
+            "cta_label",
+            "cta_url",
+            "terms",
+            "starts_at",
+            "ends_at",
+            "is_featured",
+            "show_in_announcement_bar",
+            "priority",
+            "is_live",
+        )
+        read_only_fields = fields

@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.core.exceptions import ValidationError
+from django.forms.models import BaseInlineFormSet
+from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources
-from .models import CustomUser, Vehicle, Booking, ContactMessage, Testimonial
+from .models import Booking, ContactMessage, CustomUser, Promotion, Testimonial, Vehicle, VehicleImage
 
 # Custom User Admin
 class CustomUserAdmin(UserAdmin):
@@ -32,6 +35,41 @@ class VehicleResource(resources.ModelResource):
         import_id_fields = ['slug']
         fields = ('name', 'vehicle_type', 'price_per_day', 'seats', 'fuel_type', 'transmission', 'is_available')
 
+
+class VehicleImageInlineFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+
+        active_images = 0
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data") or not form.cleaned_data:
+                continue
+            if form.cleaned_data.get("DELETE"):
+                continue
+            if form.cleaned_data.get("image") and form.cleaned_data.get("is_active", True):
+                active_images += 1
+
+        if active_images < 3:
+            raise ValidationError("Add at least 3 active gallery images for this vehicle.")
+
+
+class VehicleImageInline(admin.TabularInline):
+    model = VehicleImage
+    formset = VehicleImageInlineFormSet
+    extra = 3
+    min_num = 3
+    fields = ('image', 'preview', 'alt_text', 'caption', 'sort_order', 'is_active')
+    readonly_fields = ('preview',)
+
+    def preview(self, obj):
+        if not obj.image:
+            return "No image"
+        return format_html(
+            '<img src="{}" style="height:64px;width:96px;object-fit:cover;border-radius:6px;" />',
+            obj.image.url,
+        )
+    preview.short_description = 'Preview'
+
 # Vehicle Admin
 @admin.register(Vehicle)
 class VehicleAdmin(ImportExportModelAdmin):
@@ -42,6 +80,7 @@ class VehicleAdmin(ImportExportModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ('created_at', 'updated_at', 'rating')
     list_editable = ('is_available', 'price_per_day')
+    inlines = [VehicleImageInline]
     
     fieldsets = (
         ('Basic Information', {
@@ -123,6 +162,98 @@ class ContactMessageAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(Promotion)
+class PromotionAdmin(admin.ModelAdmin):
+    list_display = (
+        'title',
+        'promotion_type',
+        'is_active',
+        'is_featured',
+        'show_in_announcement_bar',
+        'priority',
+        'starts_at',
+        'ends_at',
+        'poster_preview',
+    )
+    list_filter = (
+        'promotion_type',
+        'is_active',
+        'is_featured',
+        'show_in_announcement_bar',
+        'audience_region',
+        'starts_at',
+        'ends_at',
+    )
+    search_fields = ('title', 'summary', 'description', 'promo_code', 'audience_region')
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ('created_at', 'updated_at', 'poster_preview')
+    list_editable = ('is_active', 'is_featured', 'show_in_announcement_bar', 'priority')
+    date_hierarchy = 'starts_at'
+    actions = ['publish_promotions', 'unpublish_promotions', 'feature_promotions']
+
+    fieldsets = (
+        ('Campaign Content', {
+            'fields': (
+                'title',
+                'slug',
+                'promotion_type',
+                'eyebrow',
+                'summary',
+                'description',
+                'poster',
+                'poster_preview',
+            )
+        }),
+        ('Discount & Targeting', {
+            'fields': (
+                'discount_percent',
+                'discount_amount',
+                'promo_code',
+                'applies_to',
+                'audience_region',
+                'terms',
+            )
+        }),
+        ('Website Placement', {
+            'fields': (
+                'cta_label',
+                'cta_url',
+                'is_featured',
+                'show_in_announcement_bar',
+                'priority',
+            )
+        }),
+        ('Schedule & Publishing', {
+            'fields': ('is_active', 'starts_at', 'ends_at')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def poster_preview(self, obj):
+        if not obj.poster:
+            return "No poster"
+        return format_html(
+            '<img src="{}" style="height:64px;width:96px;object-fit:cover;border-radius:6px;" />',
+            obj.poster.url,
+        )
+    poster_preview.short_description = 'Poster'
+
+    def publish_promotions(self, request, queryset):
+        queryset.update(is_active=True)
+    publish_promotions.short_description = "Publish selected promotions"
+
+    def unpublish_promotions(self, request, queryset):
+        queryset.update(is_active=False)
+    unpublish_promotions.short_description = "Unpublish selected promotions"
+
+    def feature_promotions(self, request, queryset):
+        queryset.update(is_featured=True)
+    feature_promotions.short_description = "Feature selected promotions"
 
 # Testimonial Admin
 @admin.register(Testimonial)
