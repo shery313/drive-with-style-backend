@@ -135,3 +135,30 @@ class PublicApiTests(TestCase):
         self.assertEqual(post_response.status_code, 201)
         self.assertEqual(list_response.status_code, 403)
         self.assertEqual(ContactMessage.objects.count(), 1)
+
+
+@override_settings(
+    DEBUG=False,
+    SECURE_SSL_REDIRECT=False,
+    STORAGES={
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    },
+    JAZZMIN_SETTINGS={
+        "site_logo": None,
+        "site_icon": None,
+        "site_title": "Drive With Style Admin",
+        "site_header": "Drive With Style",
+        "site_brand": "Drive With Style",
+    },
+)
+class AdminPanelTests(TestCase):
+    def test_admin_login_renders_without_static_manifest(self):
+        response = self.client.get("/api/v1/admin/login/?next=/api/v1/admin/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Drive With Style")

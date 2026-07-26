@@ -143,7 +143,7 @@ USE_TZ = True
 # ===== STATIC FILES (WhiteNoise) =====
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [static_dir for static_dir in [BASE_DIR / 'static'] if static_dir.exists()]
 
 CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL")
 USE_CLOUDINARY_STORAGE = bool(CLOUDINARY_URL) and not RUNNING_TESTS
@@ -154,7 +154,7 @@ if USE_CLOUDINARY_STORAGE:
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
     MEDIA_URL = '/media/'
@@ -165,7 +165,7 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
     MEDIA_URL = '/media/'
@@ -220,7 +220,7 @@ REST_FRAMEWORK = {
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG and not RUNNING_TESTS
 CSRF_COOKIE_SECURE = not DEBUG and not RUNNING_TESTS
-SECURE_SSL_REDIRECT = False if RUNNING_TESTS else os.environ.get("SECURE_SSL_REDIRECT", str(not DEBUG)).lower() == "true"
+SECURE_SSL_REDIRECT = False if RUNNING_TESTS else os.environ.get("SECURE_SSL_REDIRECT", "False").lower() == "true"
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
@@ -239,13 +239,13 @@ JAZZMIN_SETTINGS = {
     "site_brand": "Drive With Style",
     
     # Logo to use for your site, must be present in static files, used for brand on top left
-    "site_logo": "vehicles/favicon.ico",  # Changed path - make sure this file exists in static/images/
+    "site_logo": None,
     
     # CSS classes that are applied to the logo above
     "site_logo_classes": "img-circle",
     
     # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
-    "site_icon": "vehicles/logo1.jpg" , # Changed path
+    "site_icon": None,
     
     # Welcome text on the login screen
     "welcome_sign": "Welcome to Drive With Style Admin Panel",
